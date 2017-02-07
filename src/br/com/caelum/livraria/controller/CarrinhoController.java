@@ -128,6 +128,7 @@ public class CarrinhoController{
 	public String listar() throws Exception {
 		
 		//verificacao do estoque aqui
+		this.carrinho.verificarDisponibilidadeDosItemnComRmi();
 		
 		return JSP_CARRINHO_LISTAR;
 	}

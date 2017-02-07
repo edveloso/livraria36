@@ -2,6 +2,7 @@ package br.com.caelum.livraria.modelo;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.rmi.Naming;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashSet;
@@ -12,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import br.com.caelum.estoque.entidades.ItemEstoque;
+import br.com.caelum.estoque.services.EstoqueRmi;
 import br.com.caelum.livraria.jms.EnviadorMensagemJms;
 import br.com.caelum.livraria.rest.ClienteRest;
 
@@ -223,5 +226,18 @@ public class Carrinho implements Serializable {
 
 	public boolean temCartao() {
 		return numeroCartao != null && titularCartao != null;
+	}
+
+	public void verificarDisponibilidadeDosItemnComRmi() throws Exception {
+		// TODO Auto-generated method stubEstoqueRmirmi
+		EstoqueRmi estoque = (EstoqueRmi) Naming.lookup("rmi://localhost:1099/estoque");
+		for (ItemCompra itemCompra : itensDeCompra) {
+			System.out.println(" verificando quantridade" + itemCompra.getTitulo());
+			ItemEstoque item = estoque.getItemEstoque(itemCompra.getCodigo());
+			if(null != item){
+	          itemCompra.setQuantidadeNoEstoque((item.getQuantidade()));
+			}
+		}
+		
 	}
 }
