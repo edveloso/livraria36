@@ -2,7 +2,6 @@ package br.com.caelum.livraria.modelo;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.rmi.Naming;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashSet;
@@ -13,10 +12,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import br.com.caelum.estoque.entidades.ItemEstoque;
-import br.com.caelum.estoque.services.EstoqueRmi;
+import br.com.caelum.correios.soap.ConsumidorServicoCorreios;
+import br.com.caelum.estoque.soap.ConsultaEstoque;
+import br.com.caelum.estoque.soap.ConsultaEstoqueResponse;
+import br.com.caelum.estoque.soap.EstoqueWs;
+import br.com.caelum.estoque.soap.EstoqueWsService;
+import br.com.caelum.estoque.soap.ItemEstoque;
 import br.com.caelum.livraria.jms.EnviadorMensagemJms;
 import br.com.caelum.livraria.rest.ClienteRest;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 
 @Component
 @Scope("session")
@@ -102,6 +108,8 @@ public class Carrinho implements Serializable {
 		this.cepDestino = novoCepDestino;
 
 		//servico web do correios aqui
+		ConsumidorServicoCorreios servicoCorreios = new ConsumidorServicoCorreios();
+		this.valorFrete = servicoCorreios.calculaFrete(novoCepDestino);
 	}
 
 	public String getCepDestino() {
@@ -156,17 +164,16 @@ public class Carrinho implements Serializable {
 		return false;
 	}
 
-//	private void atualizarQuantidadeDisponivelDoItemCompra(final ItemEstoque itemEstoque) {
-//		ItemCompra item = Iterables.find(this.itensDeCompra, new Predicate<ItemCompra>() {
-//
-//			@Override
-//			public boolean apply(ItemCompra item) {
-//				return item.temCodigo(itemEstoque.getCodigo());
-//			}
-//		});
-//
-//		item.setQuantidadeNoEstoque(itemEstoque.getQuantidade());
-//	}
+	private void atualizarQuantidadeDisponivelDoItemCompra(final ItemEstoque itemEstoque) {
+		ItemCompra item = Iterables.find(this.itensDeCompra, new Predicate<ItemCompra>() {
+			@Override
+			public boolean apply(ItemCompra item) {
+				return item.temCodigo(itemEstoque.getCodigo());
+			}
+		});
+
+		item.setQuantidadeNoEstoque(itemEstoque.getQuantidade());
+	}
 
 	private void limparCarrinho() {
 		this.itensDeCompra = new LinkedHashSet<>();
@@ -228,16 +235,38 @@ public class Carrinho implements Serializable {
 		return numeroCartao != null && titularCartao != null;
 	}
 
-	public void verificarDisponibilidadeDosItemnComRmi() throws Exception {
-		// TODO Auto-generated method stubEstoqueRmirmi
-		EstoqueRmi estoque = (EstoqueRmi) Naming.lookup("rmi://localhost:1099/estoque");
-		for (ItemCompra itemCompra : itensDeCompra) {
-			System.out.println(" verificando quantridade" + itemCompra.getTitulo());
-			ItemEstoque item = estoque.getItemEstoque(itemCompra.getCodigo());
-			if(null != item){
-	          itemCompra.setQuantidadeNoEstoque((item.getQuantidade()));
+	public void verificarDisponibilidadeDosItensCOmSaop(){
+		
+		EstoqueWs estoqueWs = new EstoqueWsService().getEstoqueWsPort();
+		ConsultaEstoque parameters = new ConsultaEstoque();
+		
+		List<String> codigos = this.getCodigosDosItensImpressos();
+		
+		parameters.getCodigo().addAll(codigos);
+		ConsultaEstoqueResponse consultaEstoque = estoqueWs.consultaEstoque(parameters, "123");
+		List<ItemEstoque> estoques = consultaEstoque.getEstoques();
+		for (ItemEstoque itemEstoque : estoques) {
+//			atualizarQuantidadeDisponivelDoItemCompra(itemEstoque);		
+			for (ItemCompra item : this.itensDeCompra) {
+				if(item.temCodigo(itemEstoque.getCodigo())){
+					item.setQuantidadeNoEstoque(itemEstoque.getQuantidade());
+				}
 			}
 		}
 		
+		
 	}
+	
+//	public void verificarDisponibilidadeDosItemnComRmi() throws Exception {
+//		// TODO Auto-generated method stubEstoqueRmirmi
+//		EstoqueRmi estoque = (EstoqueRmi) Naming.lookup("rmi://localhost:1099/estoque");
+//		for (ItemCompra itemCompra : itensDeCompra) {
+//			System.out.println(" verificando quantridade" + itemCompra.getTitulo());
+//			ItemEstoque item = estoque.getItemEstoque(itemCompra.getCodigo());
+//			if(null != item){
+//	          itemCompra.setQuantidadeNoEstoque((item.getQuantidade()));
+//			}
+//		}
+//		
+//	}
 }

@@ -1,12 +1,14 @@
 package br.com.caelum.correios.soap;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public class ConsumidorServicoCorreios {
 
 	private final String codigoSedex = "40010";
 	private final String cepOrigemCaelumSP = "04101300"; //Caelum SP
 	private final String peso3kg = "3";
+	private final String peso020kg = "0,2";
 	private final BigDecimal comprimento20cm = new BigDecimal(20);
 	private final BigDecimal altura10cm = new BigDecimal(10);
 	private final BigDecimal largura15cm = new BigDecimal(15);
@@ -26,7 +28,15 @@ public class ConsumidorServicoCorreios {
 		String valorFrete = null;
 
 		//chamada do Web Service do Correios aqui
-
+		CalcPrecoPrazoWSSoap servico = new CalcPrecoPrazoWS().getCalcPrecoPrazoWSSoap();
+		CResultado resultado = servico.calcPrecoPrazo(semCodigoEmpresa, semSenhaEmpresa, codigoSedex, 
+				cepOrigemCaelumSP, cepDestino, peso020kg, formatoEncomendaCaixa, 
+				comprimento20cm, altura10cm, largura15cm, diametro10cm, 
+				semEntregueEmMaos, semValorDeclarado, 
+				semAvisoRecebimento);
+		List<CServico> servicosPesquisados = resultado.getServicos().getCServico();
+		valorFrete = servicosPesquisados.get(0).getValor();
+		System.out.printf("Frete para %s no valor de %s %n",cepDestino, valorFrete);
 		return converterParaBigDecimal(valorFrete);
 	}
 
