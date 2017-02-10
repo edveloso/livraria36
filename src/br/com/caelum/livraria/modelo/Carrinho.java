@@ -239,6 +239,9 @@ public class Carrinho implements Serializable {
 		
 		EstoqueWs estoqueWs = new EstoqueWsService().getEstoqueWsPort();
 		ConsultaEstoque parameters = new ConsultaEstoque();
+		if(null == parameters){
+			return ;
+		}
 		
 		List<String> codigos = this.getCodigosDosItensImpressos();
 		
