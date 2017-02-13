@@ -83,7 +83,8 @@ public class CarrinhoController{
 		}
         // Aqui fica o código de verificação do access token
         if(!accessToken.isPreenchido()){
-        	return "redirect:/oauth/password/form";
+//        	return "redirect:/oauth/password/form";
+        	return "redirect:/oauth/password/form"; //nova versao
         }
 
 		this.carrinho.criarPagamento(numeroCartao, titularCartao);
